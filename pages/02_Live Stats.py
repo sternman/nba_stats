@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import requests
 import nba_api
 from datetime import datetime, timedelta
 
@@ -11,6 +12,9 @@ from nba_api.stats.endpoints.scoreboardv2 import ScoreboardV2
 from nba_api.stats.endpoints.boxscoreadvancedv2 import BoxScoreAdvancedV2
 from nba_api.stats.endpoints.boxscorescoringv2 import BoxScoreScoringV2
 from nba_api.stats.endpoints.boxscoresummaryv2 import BoxScoreSummaryV2
+from nba_api.stats.endpoints import PlayByPlayV2
+from nba_api.stats.endpoints.videoevents import VideoEvents
+
 st.set_page_config(layout="wide")
 game_date = datetime.now()-timedelta(hours=5)
 game_date = game_date.strftime("%A, %B %d, %Y")
@@ -90,6 +94,8 @@ if selected_game:
 
     bx = BoxScoreScoringV2(game_id=lookup_gameid, timeout=20 )
     bxs = BoxScoreSummaryV2(game_id=lookup_gameid, timeout=20 )
+    play_by_play_v2 = PlayByPlayV2(game_id=lookup_gameid, timeout=20)
+    df_play_by_play_v2 = play_by_play_v2.get_data_frames()[0]
     
     scoreBoard = st.session_state.scoreboard
 
@@ -178,7 +184,7 @@ if selected_game:
                 if pos != "":
                     st.image(f"{head_shot_url}{playerid}.png", width=150)
                 else:
-                    st.image(f"{head_shot_url}{playerid}.png", width=100)
+                    st.image(f"{head_shot_url}{playerid}.png", width=125)
 
     with ct222:
         for i in range(len(team2_starters_condensed)):
@@ -195,7 +201,7 @@ if selected_game:
                 if pos != "":
                     st.image(f"{head_shot_url}{playerid}.png", width=150)
                 else:
-                    st.image(f"{head_shot_url}{playerid}.png", width=100)
+                    st.image(f"{head_shot_url}{playerid}.png", width=125)
 
     ct2.write(f"## {team2} - {team2_total_pts}")
     ot2 = ""
@@ -203,9 +209,61 @@ if selected_game:
         ot2 = f" OT: {team2_ot_pts}"
     ct22.write(f"##### Q1: {team2_q1_pts} Q2: {team2_q2_pts} Q3: {team2_q3_pts} Q4: {team2_q4_pts}{ot2}")
     # ct2.write(team2_starters_condensed)
+    # st.write(df_play_by_play_v2)
+    df_play_by_play_v2 = df_play_by_play_v2[["EVENTNUM", "PERIOD", "PCTIMESTRING", "SCORE", "HOMEDESCRIPTION", "VISITORDESCRIPTION", "PLAYER1_NAME", "PLAYER2_NAME", "PLAYER3_NAME", "VIDEO_AVAILABLE_FLAG"]]
+    df_play_by_play_v2 = df_play_by_play_v2.rename(columns={"PCTIMESTRING":"CLOCK"})
+    df_play_by_play_v2 = df_play_by_play_v2.fillna("")
+    
+    df_play_by_play_v2["DESCRIPTION"] = df_play_by_play_v2["HOMEDESCRIPTION"] + df_play_by_play_v2["VISITORDESCRIPTION"] #+ df_play_by_play_v2[""]
+    df_play_by_play_v2 = df_play_by_play_v2[["EVENTNUM", "PERIOD", "CLOCK", "SCORE", "DESCRIPTION", "PLAYER1_NAME", "PLAYER2_NAME", "PLAYER3_NAME", "VIDEO_AVAILABLE_FLAG"]]
+    df_play_by_play_v2 = df_play_by_play_v2.sort_values(by="EVENTNUM", ascending=False)
+    def highlight_score(s):
+        if s["SCORE"] != "":
+            return ['background-color: lightgreen']*len(s)
+        if "FOUL" in s["DESCRIPTION"]:
+            return ['background-color: pink']*len(s)
+        if "SUB" in s["DESCRIPTION"]:
+            return ['background-color: lightblue']*len(s)
+        if "Timeout" in s["DESCRIPTION"]:
+            return ['background-color: lightyellow']*len(s)
+        return ['background-color: white']*len(s)
+        # return ['background-color: lightgreen']*len(s) if s["SCORE"] != "" else ['background-color: white']*len(s)
+    
+    df_play_by_play_v2 = df_play_by_play_v2[["EVENTNUM", "PERIOD", "CLOCK", "SCORE", "DESCRIPTION", "PLAYER1_NAME", "PLAYER2_NAME", "PLAYER3_NAME"]]
+    df_play_by_play_v2 = df_play_by_play_v2.head(20)
+    df_play_by_play_v2 = df_play_by_play_v2.style.apply(highlight_score, axis=1)
+
+    # df_play_by_play_v2 = df_play_by_play_v2.style.set_properties(**{'text-align': 'center'})
+    st.table(df_play_by_play_v2)#, selection_mode="single-row", on_select="rerun")
+    # st.write(selected_row)
+    # if len(selected_row["selection"]["rows"]) > 0:
+    #     # st.write(selected_row)
+    #     row = df_play_by_play_v2.iloc[selected_row["selection"]["rows"][0]]
+    #     eventnum = row["EVENTNUM"]
+    #     is_video_available = row["VIDEO_AVAILABLE_FLAG"]
+    #     ve = VideoEvents(game_id=lookup_gameid, game_event_id=eventnum)
+    #     ve_data = ve.get_dict()
+    #     uuid = ve_data["resultSets"]["Meta"]["videoUrls"][0]["uuid"]
+    #     # st.write(f"http://stats.nba.com/stats/videoevents/?gameId={lookup_gameid}&gameEventId={eventnum}")
+    #     vid_url = f"http://stats.nba.com/stats/videoevents/?gameId={lookup_gameid}&gameEventId={eventnum}"
+    #     # st.write(eventnum)
+    #     st.write("row")
+    #     if is_video_available:
+    #         pass
+            # st.video(vid_url)
 
 
-
+    # st.write(lookup_gameid)
+    
+    
+    
+    # st.write(ve_data)
+    # uuid = ve_data["resultSets"]["Meta"]["videoUrls"][0]["uuid"]
+    # st.write(f"http://stats.nba.com/stats/videoevents/?gameId={lookup_gameid}&gameEventId={event_id}")
+    # vid_url = f"http://stats.nba.com/stats/videoevents/?gameId={lookup_gameid}&gameEventId={event_id}"
+    # st.video(vid_url)
+    # res = requests.get(vid_url)
+    # st.write(vid_url)
     # st.write(game_log.get_data_frames()[0])
     # st.write(scoreBoard.get_dict())        
     # st.write(players_stats)
