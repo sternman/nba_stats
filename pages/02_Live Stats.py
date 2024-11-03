@@ -12,8 +12,15 @@ from nba_api.stats.endpoints.boxscoreadvancedv2 import BoxScoreAdvancedV2
 from nba_api.stats.endpoints.boxscorescoringv2 import BoxScoreScoringV2
 from nba_api.stats.endpoints.boxscoresummaryv2 import BoxScoreSummaryV2
 st.set_page_config(layout="wide")
+game_date = datetime.now()-timedelta(hours=5)
+game_date = game_date.strftime("%A, %B %d, %Y")
 
-st.write("# Live Stats")
+
+st.write("# NBA Live Stats")
+st.write(f"## _{game_date}_")
+
+
+
 head_shot_url = "https://cdn.nba.com/headshots/nba/latest/260x190/"
 
 
