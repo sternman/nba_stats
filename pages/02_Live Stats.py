@@ -64,10 +64,10 @@ selected_game = st.selectbox("Select Game", todays_games)
 
 if "scoreboard" not in st.session_state:
     scoreBoard = ScoreboardV2(game_date=dt_start, league_id=leagues[0])
-    st.session_state.scoreboard = scoreBoard  
+    st.session_state.scoreboard = scoreBoard.get_available_data()
 
 if "scoreboard" in st.session_state:
-    scoreBoard = ScoreboardV2(game_date=dt_start, league_id=leagues[0])
+    scoreBoard = ScoreboardV2(game_date=dt_start, league_id=leagues[0], timeout=30)
     st.session_state.scoreboard = scoreBoard  
 
 # data_2 = ScoreboardV2(game_date=dt_start, league_id=leagues[0])
@@ -88,8 +88,8 @@ if selected_game:
     bxs = None
     scoreBoard = None
 
-    bx = BoxScoreScoringV2(game_id=lookup_gameid )
-    bxs = BoxScoreSummaryV2(game_id=lookup_gameid )
+    bx = BoxScoreScoringV2(game_id=lookup_gameid, timeout=20 )
+    bxs = BoxScoreSummaryV2(game_id=lookup_gameid, timeout=20 )
     
     scoreBoard = st.session_state.scoreboard
 
@@ -135,12 +135,14 @@ if selected_game:
     team1_q2_pts = team1_linescores[9]
     team1_q3_pts = team1_linescores[10]
     team1_q4_pts = team1_linescores[11]
+    team1_ot_pts = team1_linescores[12]
     team1_total_pts = team1_linescores[22]
 
     team2_q1_pts = team2_linescores[8]
     team2_q2_pts = team2_linescores[9]
     team2_q3_pts = team2_linescores[10]
     team2_q4_pts = team2_linescores[11]
+    team2_ot_pts = team2_linescores[12]
     team2_total_pts = team2_linescores[22]
     # ct1.write(team1_total_pts)
     # ct2.write(team2_total_pts)
@@ -150,13 +152,17 @@ if selected_game:
 
     h1.write(f"  ##### Quarter: {quarter} - Time: {time}")
     h2.write(f" ###### Location: {arena} - TV: {homeBroadcast} & {awayBroadcast}")
-    h3.button("Refresh")
+    if h3.button("↩️"):
+        st.rerun()
     ct1, ct2 = st.columns((1,1))
     ct11, ct22 = st.columns((1,1))
     ct111, ct222 = st.columns((1,1))
     ct1.write(f"## {team1} - {team1_total_pts}")
     
-    ct11.write(f"#### Q1: {team1_q1_pts} Q2: {team1_q2_pts} Q3: {team1_q3_pts} Q4: {team1_q4_pts}")
+    ot1 = ""
+    if team1_ot_pts > 0:
+        ot1 = f" OT: {team1_ot_pts}"
+    ct11.write(f"##### Q1: {team1_q1_pts} Q2: {team1_q2_pts} Q3: {team1_q3_pts} Q4: {team1_q4_pts}{ot1}")
     with ct111:
         for i in range(len(team1_starters_condensed)):
             player = team1_starters_condensed.values[i][0]
@@ -192,14 +198,17 @@ if selected_game:
                     st.image(f"{head_shot_url}{playerid}.png", width=100)
 
     ct2.write(f"## {team2} - {team2_total_pts}")
-    ct22.write(f"#### Q1: {team2_q1_pts} Q2: {team2_q2_pts} Q3: {team2_q3_pts} Q4: {team2_q4_pts}")
+    ot2 = ""
+    if team2_ot_pts > 0:
+        ot2 = f" OT: {team2_ot_pts}"
+    ct22.write(f"##### Q1: {team2_q1_pts} Q2: {team2_q2_pts} Q3: {team2_q3_pts} Q4: {team2_q4_pts}{ot2}")
     # ct2.write(team2_starters_condensed)
 
 
 
-    st.write(game_log.get_data_frames()[0])
-    st.write(scoreBoard.get_dict())        
-    st.write(players_stats)
-    st.write(linescores)
+    # st.write(game_log.get_data_frames()[0])
+    # st.write(scoreBoard.get_dict())        
+    # st.write(players_stats)
+    # st.write(linescores)
 
-    st.write(bx.get_dict())
+    # st.write(bx.get_dict())
