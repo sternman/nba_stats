@@ -92,9 +92,9 @@ if selected_game:
     bxs = None
     scoreBoard = None
 
-    bx = BoxScoreScoringV2(game_id=lookup_gameid, timeout=20 )
-    bxs = BoxScoreSummaryV2(game_id=lookup_gameid, timeout=20 )
-    play_by_play_v2 = PlayByPlayV2(game_id=lookup_gameid, timeout=20)
+    bx = BoxScoreScoringV2(game_id=lookup_gameid)
+    bxs = BoxScoreSummaryV2(game_id=lookup_gameid )
+    play_by_play_v2 = PlayByPlayV2(game_id=lookup_gameid)
     df_play_by_play_v2 = play_by_play_v2.get_data_frames()[0]
     
     scoreBoard = st.session_state.scoreboard
